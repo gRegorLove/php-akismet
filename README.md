@@ -21,15 +21,15 @@ To check if content is spam, build an array of the fields you want to submit (re
 
 ```php
 $comment_data = array(
-	'blog'					=> 'http://example.com',
-	'user_ip'				=> 'x.x.x.x',
-	'user_agent'			=> $_SERVER['HTTP_USER_AGENT'],
-	'referrer'				=> $_SERVER['HTTP_REFERER'],
-	'comment_type'			=> 'comment',
-	'comment_author' 		=> 'John Doe',
-	'comment_author_email'	=> 'john@example.com',
-	'comment_author_url'	=> 'http://example.com/johndoe',
-	'comment_content'		=> 'Lorem ipsum',
+    'blog'                  => 'http://example.com',
+    'user_ip'               => 'x.x.x.x',
+    'user_agent'            => $_SERVER['HTTP_USER_AGENT'],
+    'referrer'              => $_SERVER['HTTP_REFERER'],
+    'comment_type'          => 'comment',
+    'comment_author'        => 'John Doe',
+    'comment_author_email'  => 'john@example.com',
+    'comment_author_url'    => 'http://example.com/johndoe',
+    'comment_content'       => 'Lorem ipsum',
 );
 
 $response = $Akismet->checkSpam($comment_data);

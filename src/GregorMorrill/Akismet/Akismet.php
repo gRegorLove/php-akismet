@@ -1,5 +1,4 @@
 <?php
-
 namespace GregorMorrill\Akismet;
 
 class Akismet
@@ -30,7 +29,7 @@ class Akismet
 		if ( $api_key )
 		{
 			$this->api_key = $api_key;
-			$this->endpoint = sprintf('http://%s.rest.akismet.com/1.1/', $api_key);
+			$this->endpoint = sprintf('https://%s.rest.akismet.com/1.1/', $api_key);
 		}
 		else
 		{
@@ -42,7 +41,7 @@ class Akismet
 
 	/**
 	 * This method handles checking content for spam
-	 * For more information, see: http://akismet.com/development/api/#comment-check
+	 * For more information, see: https://akismet.com/development/api/#comment-check
 	 * @param array $data
 	 * @access public
 	 * @return array
@@ -65,15 +64,29 @@ class Akismet
 		# post to Akismet
 		$response = $this->post($this->endpoint . 'comment-check', $data);
 
-		# if: Akismet result indicates spam
-		if ( 'false' != trim(strtolower($response['body'])) )
+		# default responses
+		$response['error'] = $response['discard'] = $response['spam'] = null;
+
+		$body = trim(strtolower($response['body']));
+
+		# spam response
+		if ( 'true' == $body )
 		{
-			$response['spam'] = TRUE;
+			$response['spam'] = true;
+			if ( array_key_exists('x-akismet-pro-tip', $response['akismet_headers']) && $response['akismet_headers']['x-akismet-pro-tip'] == 'discard' )
+			{
+				$response['discard'] = true;
+			}
 		}
-		# else: not spam
-		else
+		# ham response
+		else if ( 'false' == $body )
 		{
-			$response['spam'] = FALSE;
+			$response['spam'] = false;
+		}
+		# error response
+		else if ( array_key_exists('x-akismet-debug-help', $response['akismet_headers']) )
+		{
+			$response['error'] = $response['akismet_headers']['x-akismet-debug-help'];
 		}
 
 		return $response;
@@ -82,7 +95,7 @@ class Akismet
 
 	/**
 	 * This method handles submitting spam content
-	 * For more information, see: http://akismet.com/development/api/#submit-spam
+	 * For more information, see: https://akismet.com/development/api/#submit-spam
 	 * @param array $data
 	 * @access public
 	 * @return array
@@ -95,7 +108,7 @@ class Akismet
 
 	/**
 	 * This method handles submitting ham content
-	 * For more information, see: http://akismet.com/development/api/#submit-ham
+	 * For more information, see: https://akismet.com/development/api/#submit-ham
 	 * @param array $data
 	 * @access public
 	 * @return array
@@ -119,15 +132,15 @@ class Akismet
 
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $endpoint);
-		curl_setopt($ch, CURLOPT_POST, TRUE);
+		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-		curl_setopt($ch, CURLOPT_HEADER, TRUE);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_HEADER, true);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-		curl_setopt($ch, CURLINFO_HEADER_OUT, TRUE);
+		curl_setopt($ch, CURLINFO_HEADER_OUT, true);
 		$curl_response = curl_exec($ch);
 
-		if ( FALSE === $curl_response )
+		if ( false === $curl_response )
 		{
 			throw new Exception('There was an error sending the Akismet request.');
 		}
@@ -136,6 +149,15 @@ class Akismet
 		$response['info']['request_header'] .= http_build_query($data);
 		$response['header'] = substr($curl_response, 0, $response['info']['header_size']);
 		$response['body'] = substr($curl_response, $response['info']['header_size']);
+		# extract X-Akismet* headers into array
+		$response['akismet_headers'] = [];
+		foreach (explode("\n", $response['header']) as $header)
+		{
+			if (stripos($header, 'x-akismet') === 0) {
+				list($key, $value) = explode(':', $header, 2);
+				$response['akismet_headers'][strtolower($key)] = $value;
+			}
+		}
 
 		curl_close($ch);
 

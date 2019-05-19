@@ -17,7 +17,7 @@ Start by creating a new Akismet object using your API key.
 $Akismet = new GregorMorrill\Akismet\Akismet('YOUR_API_KEY');
 ```
 
-To check if content is spam, build an array of the fields you want to submit (refer to the [Akismet API documentation](http://akismet.com/development/api/#comment-check)). Then call the `checkSpam` method.
+To check if content is spam, build an array of the fields you want to submit (refer to the [Akismet API documentation](https://akismet.com/development/api/#comment-check)). Then call the `checkSpam` method.
 
 ```php
 $comment_data = array(
@@ -39,8 +39,12 @@ $response = $Akismet->checkSpam($comment_data);
 * `info`: cURL request information
 * `header`: cURL response header
 * `body`: cURL response body
-* `spam`: boolean indicating whether the content is spam or not
+* `akismet_headers`: Array of X-akismet response headers
+* `spam`: boolean `true` if content is spam; `false` if content is ham; `null` if Akismet returned an error
+* `discard`: boolean `true` if Akismet has deterimed content is blatant spam you can safely discard
+* `error`: If Akismet returned an error, the text from the X-akismet-debug-help header
 
 At this point you can choose what to do with the content based on whether it is likely spam or not.
 
-Please refer to the Akiset API documentation for more information: http://akismet.com/development/api/
+Please refer to the Akismet API documentation for more information: https://akismet.com/development/api/
+
